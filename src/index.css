@@ -1,0 +1,126 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --safe-top: env(safe-area-inset-top);
+    --safe-bottom: env(safe-area-inset-bottom);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  html, body, #root {
+    height: 100%;
+    overscroll-behavior: none;
+  }
+
+  body {
+    @apply bg-base-900 text-slate-100 font-sans antialiased;
+    /* Smooth scrolling como nativo iOS */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Scrollbar invisível mas funcional */
+  ::-webkit-scrollbar { display: none; }
+  * { scrollbar-width: none; }
+
+  /* Input e select reset para iOS */
+  input, select, textarea {
+    @apply appearance-none bg-transparent;
+    font-size: 16px; /* Evita zoom automático no iOS */
+  }
+}
+
+@layer components {
+  /* Card padrão */
+  .card {
+    @apply bg-base-800 rounded-2xl border border-white/5 p-4;
+  }
+
+  /* Card com brilho sutil */
+  .card-glow {
+    @apply card;
+    background: linear-gradient(135deg, rgb(30 41 59) 0%, rgb(20 30 48) 100%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.05), 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  /* Botão primário */
+  .btn-primary {
+    @apply bg-gold-500 text-base-900 font-semibold rounded-xl px-5 py-3
+           active:scale-95 transition-transform duration-100
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Botão secundário */
+  .btn-secondary {
+    @apply bg-base-700 text-slate-200 font-medium rounded-xl px-5 py-3
+           active:scale-95 transition-transform duration-100 border border-white/10;
+  }
+
+  /* Input padrão */
+  .input {
+    @apply w-full bg-base-800 border border-white/10 rounded-xl px-4 py-3
+           text-slate-100 placeholder-slate-500
+           focus:outline-none focus:ring-2 focus:ring-gold-500/40 focus:border-gold-500/60
+           transition-colors duration-200;
+  }
+
+  /* Label padrão */
+  .label {
+    @apply text-xs font-medium text-slate-400 uppercase tracking-wider mb-1.5 block;
+  }
+
+  /* Chip / badge */
+  .chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  /* Bottom nav item */
+  .nav-item {
+    @apply flex flex-col items-center gap-1 py-2 px-4 rounded-xl
+           transition-colors duration-200 text-slate-500;
+  }
+  .nav-item.active {
+    @apply text-gold-400;
+  }
+
+  /* Seção com padding seguro iOS */
+  .screen {
+    @apply flex flex-col h-full overflow-y-auto;
+    padding-top: max(1rem, env(safe-area-inset-top));
+    padding-bottom: max(5rem, calc(env(safe-area-inset-bottom) + 4rem));
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+
+  /* Valor monetário */
+  .money-value {
+    @apply font-mono tabular-nums;
+  }
+
+  /* Skeleton loading */
+  .skeleton {
+    @apply bg-base-700 rounded-xl animate-pulse;
+  }
+}
+
+/* Animação de entrada de tela */
+.page-enter {
+  animation: pageEnter 0.25s ease-out;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Bottom sheet backdrop blur */
+.backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
