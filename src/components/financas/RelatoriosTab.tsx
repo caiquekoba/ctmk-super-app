@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend
+  PieChart, Pie, Cell
 } from 'recharts'
 import { supabase } from '@/lib/supabase'
 import { formatBRL, formatBRLCompact } from '@/lib/utils'
@@ -21,16 +21,23 @@ interface CategoryData {
   icon: string
 }
 
+interface AmountRow { transaction_amount: number }
+interface RevenueRow { revenue_amount: number }
+interface TxWithExpense {
+  transaction_amount: number
+  expense: { expense_name: string; expense_color: string; expense_icon: string } | null
+}
+
 interface RelatoriosTabProps {
   month: Date
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; color: string; value: number }[]; label?: string }) => {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-base-800 border border-white/10 rounded-xl p-3 text-sm shadow-xl">
       <p className="text-slate-400 mb-2 font-medium capitalize">{label}</p>
-      {payload.map((entry: any) => (
+      {payload.map(entry => (
         <div key={entry.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span className="text-slate-300">{entry.name === 'receitas' ? 'Receitas' : 'Despesas'}:</span>
@@ -50,7 +57,6 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
     async function load() {
       setLoading(true)
 
-      // Últimos 6 meses
       const months = Array.from({ length: 6 }, (_, i) => subMonths(month, 5 - i))
 
       const monthlyData = await Promise.all(months.map(async m => {
@@ -62,19 +68,14 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
           supabase.from('revenues').select('revenue_amount').gte('revenue_datetime', start).lte('revenue_datetime', end),
         ])
 
-        const despesas = (txRes.data ?? []).reduce((s, t) => s + t.transaction_amount, 0)
-        const receitas = (revRes.data ?? []).reduce((s, r) => s + r.revenue_amount, 0)
+        const despesas = ((txRes.data ?? []) as AmountRow[]).reduce((s, t) => s + t.transaction_amount, 0)
+        const receitas = ((revRes.data ?? []) as RevenueRow[]).reduce((s, r) => s + r.revenue_amount, 0)
 
-        return {
-          month: format(m, 'MMM', { locale: ptBR }),
-          receitas,
-          despesas,
-        }
+        return { month: format(m, 'MMM', { locale: ptBR }), receitas, despesas }
       }))
 
       setMonthly(monthlyData)
 
-      // Gastos por categoria no mês atual
       const start = startOfMonth(month).toISOString()
       const end = endOfMonth(month).toISOString()
 
@@ -85,7 +86,7 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
         .lte('transaction_datetime', end)
 
       const catMap: Record<string, { value: number; color: string; icon: string }> = {}
-      ;(txData ?? []).forEach((t: any) => {
+      ;((txData ?? []) as unknown as TxWithExpense[]).forEach(t => {
         const name = t.expense?.expense_name ?? 'Outros'
         if (!catMap[name]) catMap[name] = { value: 0, color: t.expense?.expense_color ?? '#6B7280', icon: t.expense?.expense_icon ?? '📦' }
         catMap[name].value += t.transaction_amount
@@ -118,7 +119,6 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
   return (
     <div className="flex flex-col gap-5">
 
-      {/* Resumo do mês */}
       <div className="grid grid-cols-3 gap-3">
         <div className="card text-center">
           <p className="text-xs text-slate-500 mb-1">Receitas</p>
@@ -136,16 +136,13 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
         </div>
       </div>
 
-      {/* Gráfico de barras — últimos 6 meses */}
       <div className="card">
-        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">
-          Histórico 6 meses
-        </h3>
+        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Histórico 6 meses</h3>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={monthly} barGap={4} barSize={18}>
             <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} axisLine={false} tickLine={false} />
-            <YAxis tickFormatter={v => formatBRLCompact(v)} tick={{ fill: '#64748B', fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }} />
+            <YAxis tickFormatter={v => formatBRLCompact(v as number)} tick={{ fill: '#64748B', fontSize: 10 }} axisLine={false} tickLine={false} width={55} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
             <Bar dataKey="receitas" fill="#10B981" radius={[4, 4, 0, 0]} />
             <Bar dataKey="despesas" fill="#F43F5E" radius={[4, 4, 0, 0]} />
           </BarChart>
@@ -160,26 +157,13 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
         </div>
       </div>
 
-      {/* Pizza por categoria */}
       {byCategory.length > 0 && (
         <div className="card">
-          <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">
-            Gastos por categoria
-          </h3>
+          <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Gastos por categoria</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
-              <Pie
-                data={byCategory}
-                cx="50%"
-                cy="50%"
-                innerRadius={55}
-                outerRadius={80}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {byCategory.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
+              <Pie data={byCategory} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
+                {byCategory.map((entry, i) => <Cell key={i} fill={entry.color} />)}
               </Pie>
               <Tooltip
                 formatter={(value: number) => [formatBRL(value), '']}
@@ -189,7 +173,6 @@ export default function RelatoriosTab({ month }: RelatoriosTabProps) {
             </PieChart>
           </ResponsiveContainer>
 
-          {/* Legenda manual */}
           <div className="flex flex-col gap-2 mt-2">
             {byCategory.map(cat => {
               const total = byCategory.reduce((s, c) => s + c.value, 0)

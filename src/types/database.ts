@@ -5,28 +5,20 @@
 // ── Enums ────────────────────────────────────────────────────
 
 export type UserRole = 'admin' | 'member'
-
 export type BankType = 'Corrente' | 'Poupança' | 'Cartão de Crédito' | 'Carteira Digital' | 'Investimento'
-
 export type ExpenseType = 'Fixo' | 'Variável' | 'Dívida' | 'Investimento'
-
 export type InvestmentProductType =
   | 'Ações BR' | 'Ações Internacionais' | 'FII' | 'ETF'
   | 'CDB' | 'CRI' | 'CRA' | 'LCI' | 'LCA'
   | 'Fundo' | 'Tesouro Direto' | 'Cripto' | 'Outro'
-
 export type RevenueType =
   | 'Salário' | 'Pró-labore' | 'Dividendo PJ'
   | 'Freelance' | 'Aluguel' | 'Investimento' | 'Outro'
-
 export type TaskStatus = 'A Fazer' | 'Em Progresso' | 'Concluído' | 'Cancelado'
 export type TaskPriority = 'Baixa' | 'Média' | 'Alta' | 'Urgente'
 export type RecurrencyType = 'Diária' | 'Semanal' | 'Mensal' | 'Anual'
-
 export type ProjectStatus = 'Ativo' | 'Em Pausa' | 'Concluído' | 'Arquivado'
-
 export type ArchiveType = 'documento' | 'imagem' | 'link' | 'planilha' | 'outro'
-
 export type PositionSource = 'brapi' | 'manual'
 
 // ── Entidades ────────────────────────────────────────────────
@@ -100,7 +92,6 @@ export interface Transaction {
   transaction_is_recurring: boolean
   created_at: string
   updated_at: string
-  // Joins opcionais
   expense?: Expense
   bank?: Bank
 }
@@ -116,7 +107,6 @@ export interface Revenue {
   revenue_is_recurring: boolean
   created_at: string
   updated_at: string
-  // Joins opcionais
   bank?: Bank
 }
 
@@ -161,7 +151,6 @@ export interface Task {
   task_points: number
   created_at: string
   updated_at: string
-  // Joins opcionais
   project?: Project
 }
 
@@ -175,7 +164,6 @@ export interface Note {
   note_is_pinned: boolean
   note_creation_date: string
   note_last_update: string
-  // Joins opcionais
   tags?: Tag[]
 }
 
@@ -198,39 +186,92 @@ export interface Archive {
   archive_size_kb?: number
   archive_mime_type?: string
   archive_creation_date: string
-  // Joins opcionais
   tags?: Tag[]
 }
 
-// ── Database type (para o cliente Supabase tipado) ────────────
+// ── Database type para o cliente Supabase tipado ─────────────
+// Usamos Record<string, unknown> nos Insert/Update para evitar
+// conflitos de inferência com a versão do @supabase/supabase-js
 
 export type Database = {
   public: {
     Tables: {
-      users: { Row: User; Insert: Omit<User, 'created_at' | 'updated_at'>; Update: Partial<User> }
-      banks: { Row: Bank; Insert: Omit<Bank, 'bank_id' | 'created_at' | 'updated_at'>; Update: Partial<Bank> }
-      expenses: { Row: Expense; Insert: Omit<Expense, 'expense_id' | 'created_at' | 'updated_at'>; Update: Partial<Expense> }
-      investment_products: { Row: InvestmentProduct; Insert: Omit<InvestmentProduct, 'investment_product_id' | 'created_at' | 'updated_at'>; Update: Partial<InvestmentProduct> }
-      transactions: { Row: Transaction; Insert: Omit<Transaction, 'transaction_id' | 'created_at' | 'updated_at'>; Update: Partial<Transaction> }
-      revenues: { Row: Revenue; Insert: Omit<Revenue, 'revenue_id' | 'created_at' | 'updated_at'>; Update: Partial<Revenue> }
-      positions: { Row: Position; Insert: Omit<Position, 'position_id' | 'created_at'>; Update: Partial<Position> }
-      projects: { Row: Project; Insert: Omit<Project, 'project_id' | 'created_at' | 'updated_at'>; Update: Partial<Project> }
-      tasks: { Row: Task; Insert: Omit<Task, 'task_id' | 'created_at' | 'updated_at'>; Update: Partial<Task> }
-      notes: { Row: Note; Insert: Omit<Note, 'note_id' | 'note_creation_date' | 'note_last_update'>; Update: Partial<Note> }
-      tags: { Row: Tag; Insert: Omit<Tag, 'tag_id' | 'created_at'>; Update: Partial<Tag> }
-      archives: { Row: Archive; Insert: Omit<Archive, 'archive_id' | 'archive_creation_date'>; Update: Partial<Archive> }
+      users: {
+        Row: User
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      banks: {
+        Row: Bank
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      expenses: {
+        Row: Expense
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      investment_products: {
+        Row: InvestmentProduct
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      transactions: {
+        Row: Transaction
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      revenues: {
+        Row: Revenue
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      positions: {
+        Row: Position
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      projects: {
+        Row: Project
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      tasks: {
+        Row: Task
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      notes: {
+        Row: Note
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      tags: {
+        Row: Tag
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
+      archives: {
+        Row: Archive
+        Insert: Record<string, unknown>
+        Update: Record<string, unknown>
+      }
     }
     Views: {
-      vw_bank_balance: { Row: Bank & { current_balance: number } }
-      vw_monthly_expenses_by_category: { Row: Expense & { total_spent: number; reference_month: string } }
-      vw_pending_tasks: { Row: Task & { project_name?: string; project_color?: string; is_overdue: boolean } }
+      vw_bank_balance: {
+        Row: Bank & { current_balance: number }
+      }
+      vw_monthly_expenses_by_category: {
+        Row: Expense & { total_spent: number; reference_month: string }
+      }
+      vw_pending_tasks: {
+        Row: Task & { project_name?: string; project_color?: string; is_overdue: boolean }
+      }
     }
   }
 }
 
-// ── Tipos de UI ───────────────────────────────────────────────
-
-/** Item do portfólio calculado com dados da BRAPI */
+// ── Tipo de UI ─────────────────────────────────────────────
 export interface PortfolioItem {
   ticker: string
   name: string
